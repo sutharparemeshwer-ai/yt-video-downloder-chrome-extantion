@@ -15,9 +15,22 @@ body {
 
 header {
     background-color: #202020;
-    padding: 15px;
+    padding: 10px 15px;
     text-align: center;
     border-bottom: 1px solid #303030;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.brand-logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
 }
 
 header h1 {
