@@ -1,0 +1,144 @@
+body {
+    width: 320px;
+    background-color: #0f0f0f;
+    color: #ffffff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    min-height: 400px;
+}
+
+header {
+    background-color: #202020;
+    padding: 15px;
+    text-align: center;
+    border-bottom: 1px solid #303030;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #ff0000;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+main {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.thumbnail-container {
+    width: 100%;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+#video-thumbnail {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+h2 {
+    font-size: 0.95rem;
+    margin: 0 0 15px 0;
+    text-align: center;
+    line-height: 1.4;
+    max-height: 2.8em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.controls {
+    width: 100%;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+select {
+    background-color: #202020;
+    color: white;
+    border: 1px solid #404040;
+    padding: 5px 10px;
+    border-radius: 4px;
+    width: 60%;
+}
+
+.btn-primary {
+    background-color: #cc0000;
+    color: white;
+    border: none;
+    padding: 12px 0;
+    width: 100%;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 1rem;
+}
+
+.btn-primary:hover {
+    background-color: #ff0000;
+}
+
+.btn-primary:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+}
+
+.status-message {
+    text-align: center;
+    color: #aaa;
+}
+
+.spinner {
+    border: 3px solid rgba(255,255,255,0.1);
+    border-left-color: #ff0000;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+footer {
+    padding: 10px;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #666;
+    background-color: #151515;
+}
+
+.status-text {
+    font-size: 0.8rem;
+    color: #aaa;
+    margin-top: 10px;
+    text-align: center;
+    min-height: 1.2em;
+}

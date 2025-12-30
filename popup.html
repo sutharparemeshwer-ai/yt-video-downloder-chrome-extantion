@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamSaver</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>StreamSaver</h1>
+        </header>
+
+        <main id="main-content">
+            <div id="loading" class="status-message">
+                <div class="spinner"></div>
+                <p>Detecting video...</p>
+            </div>
+
+            <div id="video-content" class="hidden">
+                <div class="thumbnail-container">
+                    <img id="video-thumbnail" src="" alt="Video Thumbnail">
+                </div>
+                <h2 id="video-title">Video Title</h2>
+                
+                <div class="controls">
+                    <label for="format-select">Format:</label>
+                    <select id="format-select">
+                        <option value="mp4">MP4 (Video)</option>
+                        <option value="mp3">MP3 (Audio)</option>
+                    </select>
+                </div>
+
+                <button id="download-btn" class="btn-primary">Download Direct</button>
+                <p id="status-text" class="status-text"></p>
+            </div>
+
+            <div id="error-content" class="hidden">
+                <p>No video detected.</p>
+                <p class="sub-text">Please open a YouTube video page.</p>
+            </div>
+        </main>
+
+        <footer>
+            <p>StreamSaver v3.0</p>
+        </footer>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>
