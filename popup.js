@@ -7,7 +7,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const titleText = document.getElementById('video-title');
     const downloadBtn = document.getElementById('download-btn');
     const formatSelect = document.getElementById('format-select');
+    const qualityControl = document.getElementById('quality-control');
+    const qualitySelect = document.getElementById('quality-select');
     const statusText = document.getElementById('status-text');
+
+    // Toggle quality options based on format
+    formatSelect.addEventListener('change', () => {
+        if (formatSelect.value === 'mp3') {
+            qualityControl.classList.add('hidden');
+        } else {
+            qualityControl.classList.remove('hidden');
+        }
+    });
 
     let currentVideoUrl = '';
 
@@ -52,13 +63,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!currentVideoUrl) return;
 
         const format = formatSelect.value;
+        const quality = qualitySelect.value;
         updateStatus(`Processing ${format.toUpperCase()}...`, 'normal');
         downloadBtn.disabled = true;
 
         chrome.runtime.sendMessage({
             action: "DOWNLOAD_VIDEO",
             url: currentVideoUrl,
-            format: format
+            format: format,
+            quality: quality
         }, (response) => {
             if (chrome.runtime.lastError) {
                 updateStatus('Extension Error: ' + chrome.runtime.lastError.message, 'error');
