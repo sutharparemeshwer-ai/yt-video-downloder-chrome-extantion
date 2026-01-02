@@ -6,25 +6,79 @@ document.addEventListener('DOMContentLoaded', () => {
     const thumbnailImg = document.getElementById('video-thumbnail');
     const titleText = document.getElementById('video-title');
     const downloadBtn = document.getElementById('download-btn');
-    const formatSelect = document.getElementById('format-select');
     const qualityControl = document.getElementById('quality-control');
-    const qualitySelect = document.getElementById('quality-select');
     const statusText = document.getElementById('status-text');
 
-    // Toggle quality options based on format
-    formatSelect.addEventListener('change', () => {
-        if (formatSelect.value === 'mp3') {
+    // Values to store selections
+    let selectedFormat = 'mp4';
+    let selectedQuality = 'best';
+
+    // Custom Dropdown Logic
+    function setupCustomSelect(id, onChange) {
+        const container = document.getElementById(id);
+        const trigger = container.querySelector('.select-trigger');
+        const optionsContainer = container.querySelector('.select-options');
+        const options = container.querySelectorAll('.option');
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Close other dropdowns first
+            document.querySelectorAll('.custom-select').forEach(cs => {
+                if (cs !== container) cs.classList.remove('open');
+            });
+            container.classList.toggle('open');
+            optionsContainer.classList.toggle('hidden');
+        });
+
+        options.forEach(opt => {
+            opt.addEventListener('click', () => {
+                const value = opt.getAttribute('data-value');
+                const text = opt.textContent;
+
+                // Update trigger
+                trigger.textContent = text;
+                trigger.setAttribute('data-value', value);
+
+                // Update visual selection
+                options.forEach(o => o.classList.remove('selected'));
+                opt.classList.add('selected');
+
+                // Close
+                container.classList.remove('open');
+                optionsContainer.classList.add('hidden');
+
+                if (onChange) onChange(value);
+            });
+        });
+    }
+
+    // Initialize Dropdowns
+    setupCustomSelect('format-custom', (val) => {
+        selectedFormat = val;
+        if (val === 'mp3') {
             qualityControl.classList.add('hidden');
         } else {
             qualityControl.classList.remove('hidden');
         }
     });
 
+    setupCustomSelect('quality-custom', (val) => {
+        selectedQuality = val;
+    });
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.custom-select').forEach(cs => {
+            cs.classList.remove('open');
+            cs.querySelector('.select-options').classList.add('hidden');
+        });
+    });
+
     let currentVideoUrl = '';
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const activeTab = tabs[0];
-        const isYouTubeVideo = activeTab.url.includes("youtube.com/watch") || activeTab.url.includes("youtube.com/shorts");
+        const isYouTubeVideo = activeTab && activeTab.url && (activeTab.url.includes("youtube.com/watch") || activeTab.url.includes("youtube.com/shorts"));
         
         if (isYouTubeVideo) {
             chrome.scripting.executeScript({
@@ -67,8 +121,6 @@ document.addEventListener('DOMContentLoaded', () => {
     downloadBtn.addEventListener('click', () => {
         if (!currentVideoUrl) return;
 
-        const format = formatSelect.value;
-        const quality = qualitySelect.value;
         updateStatus(`Starting...`, 'normal');
         downloadBtn.disabled = true;
         
@@ -80,14 +132,13 @@ document.addEventListener('DOMContentLoaded', () => {
         chrome.runtime.sendMessage({
             action: "DOWNLOAD_VIDEO",
             url: currentVideoUrl,
-            format: format,
-            quality: quality
+            format: selectedFormat,
+            quality: selectedQuality
         }, (response) => {
             if (chrome.runtime.lastError) {
                 updateStatus('Extension Error: ' + chrome.runtime.lastError.message, 'error');
                 downloadBtn.disabled = false;
             } else if (response && response.success) {
-                // Job Started! Now poll for progress UI
                 const jobId = response.jobId;
                 trackProgress(jobId);
             } else {
@@ -104,14 +155,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const tracker = setInterval(async () => {
             try {
                 const res = await fetch(`${localApi}/status?jobId=${jobId}`);
-                if (!res.ok) return; // Keep trying
+                if (!res.ok) return;
 
                 const data = await res.json();
 
                 if (data.status === 'processing') {
                     if (data.progressData) {
                         const { percent, totalSize, speed, eta } = data.progressData;
-                        progressBar.style.width = percent; // e.g., "45.5%"
+                        progressBar.style.width = percent;
                         progressText.textContent = `${percent} • ${totalSize} • ${speed}`;
                         updateStatus(`Downloading... ETA: ${eta}`, 'normal');
                     } else {

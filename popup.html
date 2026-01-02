@@ -28,20 +28,26 @@
                 <h2 id="video-title">Video Title</h2>
                 
                 <div class="controls">
-                    <label for="format-select">Format:</label>
-                    <select id="format-select">
-                        <option value="mp4">MP4 (Video)</option>
-                        <option value="mp3">MP3 (Audio)</option>
-                    </select>
+                    <label>Format</label>
+                    <div class="custom-select" id="format-custom">
+                        <div class="select-trigger" data-value="mp4">MP4 (Video)</div>
+                        <div class="select-options hidden">
+                            <div class="option selected" data-value="mp4">MP4 (Video)</div>
+                            <div class="option" data-value="mp3">MP3 (Audio)</div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="controls" id="quality-control">
-                    <label for="quality-select">Quality:</label>
-                    <select id="quality-select">
-                        <option value="best">Best Available</option>
-                        <option value="720">720p</option>
-                        <option value="360">360p</option>
-                    </select>
+                    <label>Quality</label>
+                    <div class="custom-select" id="quality-custom">
+                        <div class="select-trigger" data-value="best">Best Available</div>
+                        <div class="select-options hidden">
+                            <div class="option selected" data-value="best">Best Available</div>
+                            <div class="option" data-value="720">720p</div>
+                            <div class="option" data-value="360">360p</div>
+                        </div>
+                    </div>
                 </div>
 
                 <button id="download-btn" class="btn-primary">Download Direct</button>
