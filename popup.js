@@ -24,8 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const activeTab = tabs[0];
+        const isYouTubeVideo = activeTab.url.includes("youtube.com/watch") || activeTab.url.includes("youtube.com/shorts");
         
-        if (activeTab.url.includes("youtube.com/watch")) {
+        if (isYouTubeVideo) {
             chrome.scripting.executeScript({
                 target: { tabId: activeTab.id },
                 files: ['content.js']

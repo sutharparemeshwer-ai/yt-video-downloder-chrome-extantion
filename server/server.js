@@ -90,10 +90,20 @@ app.post('/start-download', (req, res) => {
         // Video Quality Logic
         let formatSelector = 'bestvideo+bestaudio/best'; 
 
-        if (quality === '720') {
-             formatSelector = 'bestvideo[height<=720]+bestaudio/best[height<=720]';
-        } else if (quality === '360') {
-             formatSelector = 'bestvideo[height<=360]+bestaudio/best[height<=360]';
+        // Smart Logic for SHORTS
+        const isShorts = videoUrl.includes('/shorts/');
+        
+        if (isShorts) {
+             console.log(`[Job ${jobId}] Detected Shorts. Optimizing for size...`);
+             // Limit Shorts to 1080p to avoid massive file sizes (usually keeps it under 50MB)
+             formatSelector = 'bestvideo[height<=1080]+bestaudio/best[height<=1080]';
+        } else {
+            // Normal Video Logic
+            if (quality === '720') {
+                 formatSelector = 'bestvideo[height<=720]+bestaudio/best[height<=720]';
+            } else if (quality === '360') {
+                 formatSelector = 'bestvideo[height<=360]+bestaudio/best[height<=360]';
+            }
         }
 
         args = [
