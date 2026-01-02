@@ -140,8 +140,9 @@ h2 {
 }
 
 .select-options {
+    display: none; /* Hidden by default */
     position: absolute;
-    bottom: 100%; /* Open UPWARDS to save space if needed */
+    bottom: 100%;
     left: 0;
     right: 0;
     margin-bottom: 5px;
@@ -151,6 +152,16 @@ h2 {
     z-index: 100;
     overflow: hidden;
     box-shadow: 0 -5px 20px rgba(0,0,0,0.6);
+}
+
+.custom-select.open .select-options {
+    display: block; /* Show when open */
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* For Format dropdown, open downwards */
