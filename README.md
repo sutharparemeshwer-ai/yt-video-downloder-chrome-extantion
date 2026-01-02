@@ -1,95 +1,79 @@
 # StreamSaver - Universal Video Downloader 🚀
 
-![Version](https://img.shields.io/badge/version-6.0-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![Platform](https://img.shields.io/badge/platform-Chrome_Extension-red) ![Backend](https://img.shields.io/badge/backend-Node.js%20%2B%20yt--dlp-green)
+![Version](https://img.shields.io/badge/version-6.0-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![Platform](https://img.shields.io/badge/platform-Chrome_Extension-red)
 
-A powerful, modern Chrome Extension to download videos from **YouTube (including Shorts)**, **Instagram**, **Facebook**, **Twitter**, and **1000+ other websites**. It uses a local server powered by `yt-dlp` to ensure the highest quality downloads (up to 4K/8K) and format conversion (MP3).
+A powerful, modern Chrome Extension to download videos from **YouTube (Shorts/4K)**, **Instagram**, **Facebook**, **Twitter**, and **1000+ other websites**.
+
+Unlike other downloaders, StreamSaver uses a **background system service** to handle downloads, ensuring high speed, no browser crashes, and support for huge files.
+
+---
+
+## 📥 How to Install (For Users)
+
+You do **not** need to be a tech expert. Just follow these 3 steps:
+
+### 1. Run the Setup
+1.  Download and extract the `StreamSaver-Release` folder.
+2.  Open the `Server` folder.
+3.  Double-click **`setup.bat`**.
+    *   This will automatically install the necessary background service.
+    *   It will verify that the downloader engine is ready.
+    *   It will start the service for you.
+
+### 2. Install the Extension
+1.  Open Google Chrome.
+2.  Go to `chrome://extensions` (type this in the address bar).
+3.  Turn on **Developer Mode** (switch in the top-right corner).
+4.  Click **Load Unpacked**.
+5.  Select the `Extension` folder from the download.
+
+### 3. Done!
+Go to any YouTube video, click the red **StreamSaver Icon** in your toolbar, and hit Download!
 
 ---
 
 ## ✨ Features
-
-*   **🌍 Universal Support:** Works on YouTube, Instagram Reels, Facebook, Vimeo, Twitter, TikTok, and 1000+ more sites.
-*   **⚡ YouTube Shorts Optimized:** Automatically detects Shorts and optimizes file size (Max 1080p, <50MB) while keeping normal videos in 4K.
-*   **🎨 Modern Dark UI:** Sleek, professional popup design with Red accents and animated custom dropdowns.
-*   **🎵 Format Conversion:** Download as **Video (MP4)** or extract **Audio (MP3)** instantly.
-*   **🔓 Cookie Bypass:** Uses your browser cookies to download age-restricted or premium videos you have access to.
-*   **🚀 High Performance:** No browser throttling. Downloads happen outside the browser via the local server.
+*   **One-Click Install:** No command line or coding knowledge required.
+*   **Auto-Start:** The background service runs silently when Windows starts.
+*   **Smart Detect:** Automatically finds `yt-dlp` or downloads it if missing.
+*   **Universal:** Works on YouTube, Insta, TikTok, Vimeo, and more.
+*   **High Quality:** Supports 4K, 8K, and high-quality MP3 extraction.
 
 ---
 
-## 🛠️ Architecture
+## 👨‍💻 For Developers
 
-This project uses a **Hybrid Architecture** to bypass browser limitations:
-
-1.  **Frontend (Extension):** Detects the URL and sends it to the local server.
-2.  **Backend (Local Server):** Receives the request, spawns a `yt-dlp` process, and handles the heavy lifting.
-3.  **Core Engine (yt-dlp):** The industry-standard command-line tool that fetches the actual video stream.
-
-```mermaid
-[Browser Extension]  -->  (HTTP Request)  -->  [Local Node Server]  -->  (Spawn Process)  -->  [yt-dlp Core]
-```
-
----
-
-## 🚀 How to Install & Run
+If you want to modify the source code or build it yourself:
 
 ### Prerequisites
-*   **Node.js** installed on your machine.
-*   **yt-dlp** (Should be in your system PATH or installed via pip/brew).
+*   Node.js (v16+)
+*   NPM
 
-### Step 1: Start the Local Server
-The server acts as the bridge between the browser and the downloader core.
-
-1.  Navigate to the `server` folder.
-2.  Run the easy start script:
-    ```bash
-    # Windows
-    run-server.bat
-    ```
-    *Or manually:*
+### Building from Source
+1.  Clone this repository.
+2.  Install dependencies:
     ```bash
     cd server
     npm install
-    node server.js
     ```
-3.  Keep this terminal window open (minimized).
-
-### Step 2: Load the Extension
-1.  Open Chrome and go to `chrome://extensions`.
-2.  Enable **Developer Mode** (top right toggle).
-3.  Click **Load Unpacked**.
-4.  Select the main folder (`yt-downloader`) of this project.
-
-### Step 3: Usage
-1.  Go to any video (e.g., YouTube or Instagram).
-2.  Click the **StreamSaver** icon in your toolbar.
-3.  Wait for it to analyze the link.
-4.  Select **Format** (MP4/MP3) and **Quality**.
-5.  Click **Download Direct**.
+3.  **Build the Release:**
+    Run the build script in the root directory:
+    ```cmd
+    build_release.bat
+    ```
+    This will compile the Node.js server into a standalone `.exe` and create the `StreamSaver-Release` folder.
 
 ---
 
-## 📸 Screenshots
-*(Add your screenshots here)*
+## 🛠️ Troubleshooting
+
+**Q: I clicked Download but nothing happened?**
+A: Make sure the background service is running. You can verify this by checking if "StreamSaver-Server.exe" is in your Task Manager, or just run `setup.bat` again to restart it.
+
+**Q: Windows Defender blocked the file.**
+A: Since this is a custom-made tool and not signed by Microsoft, Windows might warn you. Click "More Info" -> "Run Anyway". It is safe and open source.
 
 ---
 
-## 🤝 Troubleshooting
-
-**Q: "Server Error" in the popup?**
-A: Make sure the black terminal window (Local Server) is running.
-
-**Q: Download stuck at 0%?**
-A: Check the server console log for errors. It might be a network issue or an unsupported link.
-
----
-
-## 👨‍💻 Tech Stack
-*   **Frontend:** HTML5, CSS3, Vanilla JavaScript (Manifest V3)
-*   **Backend:** Node.js, Express.js
-*   **Core:** yt-dlp (Python-based)
-*   **Communication:** REST API (Fetch)
-
----
-
-**Made for Educational Purposes.**
+**License:** MIT
+**Disclaimer:** This tool is for educational purposes. Please respect copyright laws.

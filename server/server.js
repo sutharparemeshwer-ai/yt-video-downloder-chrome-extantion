@@ -23,11 +23,22 @@ app.post('/video-info', (req, res) => {
 
     console.log(`Fetching info for: ${url}`);
     
+    // Determine yt-dlp path (Check local bin first, then global)
+    let ytDlpPath = 'yt-dlp';
+    const localBin = path.join(__dirname, 'bin', 'yt-dlp.exe');
+    const localRoot = path.join(__dirname, 'yt-dlp.exe');
+    
+    if (fs.existsSync(localBin)) {
+        ytDlpPath = localBin;
+    } else if (fs.existsSync(localRoot)) {
+        ytDlpPath = localRoot;
+    }
+
     // Run yt-dlp to get JSON metadata
     // --flat-playlist: If it's a playlist, just get info, don't list all videos (faster)
     const args = ['--dump-json', '--flat-playlist', '--no-warnings', url];
 
-    const child = spawn('yt-dlp', args);
+    const child = spawn(ytDlpPath, args);
     let output = '';
     let errorOutput = '';
 
@@ -154,8 +165,19 @@ app.post('/start-download', (req, res) => {
         ];
     }
 
+    // Determine yt-dlp path
+    let ytDlpPath = 'yt-dlp';
+    const localBin = path.join(__dirname, 'bin', 'yt-dlp.exe');
+    const localRoot = path.join(__dirname, 'yt-dlp.exe');
+    
+    if (fs.existsSync(localBin)) {
+        ytDlpPath = localBin;
+    } else if (fs.existsSync(localRoot)) {
+        ytDlpPath = localRoot;
+    }
+
     // Spawn the process
-    const child = spawn('yt-dlp', args);
+    const child = spawn(ytDlpPath, args);
 
     child.stdout.on('data', (data) => {
         const output = data.toString();

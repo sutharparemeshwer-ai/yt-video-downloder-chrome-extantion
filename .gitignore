@@ -25,3 +25,11 @@ desktop.ini
 .idea/
 .vscode/
 *.swp
+
+# Build artifacts
+*.exe
+dist/
+StreamSaver-Release/
+
+# User Data
+server/cookies-*.txt
