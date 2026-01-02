@@ -11,9 +11,24 @@ async function startDownloadJob(videoUrl, format, quality, sendResponse) {
 
     try {
         console.log(`Starting Job for: ${videoUrl} [${format}/${quality}]`);
+
+        // 0. Get Cookies from Browser
+        const cookies = await chrome.cookies.getAll({ domain: "youtube.com" });
         
-        // 1. Start Job
-        const startRes = await fetch(`${localApi}/start-download?url=${encodeURIComponent(videoUrl)}&format=${format}&quality=${quality}`);
+        // 1. Start Job (POST request now)
+        const startRes = await fetch(`${localApi}/start-download`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                url: videoUrl,
+                format: format,
+                quality: quality,
+                cookies: cookies
+            })
+        });
+
         if (!startRes.ok) throw new Error('Failed to start download job');
         
         const startData = await startRes.json();
@@ -21,9 +36,12 @@ async function startDownloadJob(videoUrl, format, quality, sendResponse) {
 
         const jobId = startData.jobId;
         console.log(`Job Started: ${jobId}. Polling...`);
+        
+        // Return Job ID immediately to Popup so it can track progress
+        sendResponse({ success: true, jobId: jobId });
 
-        // 2. Poll Status
-        pollStatus(jobId, sendResponse);
+        // 2. Poll Status (in background to trigger download when done)
+        pollStatus(jobId);
 
     } catch (e) {
         console.error("Local Server Error:", e);
@@ -34,40 +52,36 @@ async function startDownloadJob(videoUrl, format, quality, sendResponse) {
     }
 }
 
-function pollStatus(jobId, sendResponse) {
+function pollStatus(jobId) {
     const localApi = 'http://localhost:3000';
-    const interval = 2000; // 2 seconds
+    const interval = 1000; // Check every second
 
     const poller = setInterval(async () => {
         try {
             const res = await fetch(`${localApi}/status?jobId=${jobId}`);
             if (!res.ok) {
                 clearInterval(poller);
-                sendResponse({ success: false, error: 'Failed to check status' });
                 return;
             }
 
             const data = await res.json();
-            console.log(`Job ${jobId} Status: ${data.status}`);
 
             if (data.status === 'completed') {
                 clearInterval(poller);
                 // 3. Download Result
                 chrome.downloads.download({
                     url: data.downloadUrl,
-                    filename: data.filename // Use the filename from server
-                }, (id) => {
-                    sendResponse({ success: true, downloadId: id });
+                    filename: data.filename
                 });
             } else if (data.status === 'error') {
                 clearInterval(poller);
-                sendResponse({ success: false, error: data.error || 'Download failed on server' });
+                console.error("Background Download Error:", data.error);
             }
             // If 'processing', continue polling
 
         } catch (e) {
             clearInterval(poller);
-            sendResponse({ success: false, error: 'Polling error: ' + e.message });
+            console.error("Background Polling Error:", e);
         }
     }, interval);
 }

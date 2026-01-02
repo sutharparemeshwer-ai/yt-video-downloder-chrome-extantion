@@ -45,6 +45,14 @@
                 </div>
 
                 <button id="download-btn" class="btn-primary">Download Direct</button>
+                
+                <div id="progress-container" class="hidden" style="width: 100%; margin-top: 15px;">
+                    <div style="background-color: #333; height: 10px; border-radius: 5px; overflow: hidden;">
+                        <div id="progress-bar" style="width: 0%; height: 100%; background-color: #cc0000; transition: width 0.3s;"></div>
+                    </div>
+                    <p id="progress-text" style="font-size: 0.75rem; color: #aaa; margin-top: 5px; text-align: center;">0% • 0MiB / 0MiB</p>
+                </div>
+
                 <p id="status-text" class="status-text"></p>
             </div>
 

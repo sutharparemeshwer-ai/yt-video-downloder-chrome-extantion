@@ -59,13 +59,22 @@ document.addEventListener('DOMContentLoaded', () => {
         errorContent.classList.remove('hidden');
     }
 
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+
     downloadBtn.addEventListener('click', () => {
         if (!currentVideoUrl) return;
 
         const format = formatSelect.value;
         const quality = qualitySelect.value;
-        updateStatus(`Processing ${format.toUpperCase()}...`, 'normal');
+        updateStatus(`Starting...`, 'normal');
         downloadBtn.disabled = true;
+        
+        // Reset Progress UI
+        progressContainer.classList.remove('hidden');
+        progressBar.style.width = '0%';
+        progressText.textContent = 'Initializing...';
 
         chrome.runtime.sendMessage({
             action: "DOWNLOAD_VIDEO",
@@ -75,14 +84,57 @@ document.addEventListener('DOMContentLoaded', () => {
         }, (response) => {
             if (chrome.runtime.lastError) {
                 updateStatus('Extension Error: ' + chrome.runtime.lastError.message, 'error');
+                downloadBtn.disabled = false;
             } else if (response && response.success) {
-                updateStatus('Download Started!', 'success');
+                // Job Started! Now poll for progress UI
+                const jobId = response.jobId;
+                trackProgress(jobId);
             } else {
                 updateStatus('Error: ' + (response ? response.error : 'Unknown'), 'error');
+                downloadBtn.disabled = false;
             }
-            downloadBtn.disabled = false;
         });
     });
+
+    function trackProgress(jobId) {
+        const localApi = 'http://localhost:3000';
+        const interval = 1000;
+
+        const tracker = setInterval(async () => {
+            try {
+                const res = await fetch(`${localApi}/status?jobId=${jobId}`);
+                if (!res.ok) return; // Keep trying
+
+                const data = await res.json();
+
+                if (data.status === 'processing') {
+                    if (data.progressData) {
+                        const { percent, totalSize, speed, eta } = data.progressData;
+                        progressBar.style.width = percent; // e.g., "45.5%"
+                        progressText.textContent = `${percent} • ${totalSize} • ${speed}`;
+                        updateStatus(`Downloading... ETA: ${eta}`, 'normal');
+                    } else {
+                        progressText.textContent = 'Processing on server...';
+                    }
+                } else if (data.status === 'completed') {
+                    clearInterval(tracker);
+                    progressBar.style.width = '100%';
+                    progressBar.style.backgroundColor = '#44ff44';
+                    progressText.textContent = 'Download Complete!';
+                    updateStatus('Saved to Downloads!', 'success');
+                    downloadBtn.disabled = false;
+                } else if (data.status === 'error') {
+                    clearInterval(tracker);
+                    progressBar.style.backgroundColor = '#ff4444';
+                    updateStatus('Error: ' + data.error, 'error');
+                    downloadBtn.disabled = false;
+                }
+
+            } catch (e) {
+                console.error(e);
+            }
+        }, interval);
+    }
 
     function updateStatus(msg, type) {
         statusText.textContent = msg;
