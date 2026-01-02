@@ -16,6 +16,45 @@ app.use('/files', express.static(path.join(__dirname, 'downloads')));
 // In-memory job store
 const jobs = {};
 
+// 0. NEW: Get Video Info (Universal Support)
+app.post('/video-info', (req, res) => {
+    const { url } = req.body;
+    if (!url) return res.status(400).json({ error: 'No URL provided' });
+
+    console.log(`Fetching info for: ${url}`);
+    
+    // Run yt-dlp to get JSON metadata
+    // --flat-playlist: If it's a playlist, just get info, don't list all videos (faster)
+    const args = ['--dump-json', '--flat-playlist', '--no-warnings', url];
+
+    const child = spawn('yt-dlp', args);
+    let output = '';
+    let errorOutput = '';
+
+    child.stdout.on('data', (data) => output += data.toString());
+    child.stderr.on('data', (data) => errorOutput += data.toString());
+
+    child.on('close', (code) => {
+        if (code !== 0) {
+            console.error('Info fetch failed:', errorOutput);
+            return res.status(500).json({ success: false, error: 'Not a supported video link' });
+        }
+
+        try {
+            const data = JSON.parse(output);
+            res.json({
+                success: true,
+                title: data.title || 'Unknown Video',
+                thumbnail: data.thumbnail || '',
+                url: data.webpage_url || url,
+                site: data.extractor_key || 'Unknown Site'
+            });
+        } catch (e) {
+            res.status(500).json({ success: false, error: 'Failed to parse video info' });
+        }
+    });
+});
+
 // 1. Start a Download Job
 app.post('/start-download', (req, res) => {
     const { url: videoUrl, format = 'mp4', quality = 'best', cookies } = req.body;

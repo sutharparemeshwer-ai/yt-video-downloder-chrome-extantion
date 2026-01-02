@@ -10,7 +10,7 @@
     "cookies"
   ],
   "host_permissions": [
-    "*://*.youtube.com/*",
+    "<all_urls>",
     "http://localhost:3000/*"
   ],
   "action": {
@@ -27,8 +27,7 @@
   "content_scripts": [
     {
       "matches": [
-        "*://*.youtube.com/watch*",
-        "*://*.youtube.com/shorts/*"
+        "<all_urls>"
       ],
       "js": ["content.js"]
     }

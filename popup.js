@@ -12,8 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Values to store selections
     let selectedFormat = 'mp4';
     let selectedQuality = 'best';
+    let currentVideoUrl = '';
 
-    // Custom Dropdown Logic
+    // --- Custom Dropdown Setup ---
     function setupCustomSelect(id, onChange) {
         const container = document.getElementById(id);
         const trigger = container.querySelector('.select-trigger');
@@ -22,98 +23,100 @@ document.addEventListener('DOMContentLoaded', () => {
 
         trigger.addEventListener('click', (e) => {
             e.stopPropagation();
-            // Close other dropdowns first
             document.querySelectorAll('.custom-select').forEach(cs => {
                 if (cs !== container) cs.classList.remove('open');
             });
             container.classList.toggle('open');
-            optionsContainer.classList.toggle('hidden');
         });
 
         options.forEach(opt => {
             opt.addEventListener('click', () => {
                 const value = opt.getAttribute('data-value');
-                const text = opt.textContent;
-
-                // Update trigger
-                trigger.textContent = text;
+                trigger.textContent = opt.textContent;
                 trigger.setAttribute('data-value', value);
-
-                // Update visual selection
                 options.forEach(o => o.classList.remove('selected'));
                 opt.classList.add('selected');
-
-                // Close
                 container.classList.remove('open');
-                optionsContainer.classList.add('hidden');
-
                 if (onChange) onChange(value);
             });
         });
     }
 
-    // Initialize Dropdowns
     setupCustomSelect('format-custom', (val) => {
         selectedFormat = val;
-        if (val === 'mp3') {
-            qualityControl.classList.add('hidden');
-        } else {
-            qualityControl.classList.remove('hidden');
-        }
+        if (val === 'mp3') qualityControl.classList.add('hidden');
+        else qualityControl.classList.remove('hidden');
     });
 
-    setupCustomSelect('quality-custom', (val) => {
-        selectedQuality = val;
-    });
+    setupCustomSelect('quality-custom', (val) => { selectedQuality = val; });
 
-    // Close dropdowns when clicking outside
     document.addEventListener('click', () => {
-        document.querySelectorAll('.custom-select').forEach(cs => {
-            cs.classList.remove('open');
-            cs.querySelector('.select-options').classList.add('hidden');
-        });
+        document.querySelectorAll('.custom-select').forEach(cs => cs.classList.remove('open'));
     });
+    // -----------------------------
 
-    let currentVideoUrl = '';
-
+    // 1. Get Current Tab URL & Fetch Info from Server
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const activeTab = tabs[0];
-        const isYouTubeVideo = activeTab && activeTab.url && (activeTab.url.includes("youtube.com/watch") || activeTab.url.includes("youtube.com/shorts"));
         
-        if (isYouTubeVideo) {
-            chrome.scripting.executeScript({
-                target: { tabId: activeTab.id },
-                files: ['content.js']
-            }, () => {
-                chrome.tabs.sendMessage(activeTab.id, { action: "GET_VIDEO_INFO" }, (response) => {
-                    if (chrome.runtime.lastError || !response || !response.success) {
-                        showError();
-                    } else {
-                        showVideo(response);
-                    }
-                });
-            });
+        if (activeTab && activeTab.url && activeTab.url.startsWith('http')) {
+            currentVideoUrl = activeTab.url;
+            fetchVideoInfo(currentVideoUrl);
         } else {
-            showError();
+            showError("Cannot download from this page.");
         }
     });
+
+    async function fetchVideoInfo(url) {
+        // Show loading state
+        loadingDiv.classList.remove('hidden');
+        videoContent.classList.add('hidden');
+        errorContent.classList.add('hidden');
+        
+        // Update loading text
+        loadingDiv.querySelector('p').textContent = "Analyzing Link...";
+
+        try {
+            const response = await fetch('http://localhost:3000/video-info', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: url })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showVideo(data);
+            } else {
+                showError("No video found on this page.");
+            }
+        } catch (error) {
+            console.error(error);
+            showError("Server Error. Is the local app running?");
+        }
+    }
 
     function showVideo(data) {
         loadingDiv.classList.add('hidden');
-        errorContent.classList.add('hidden');
         videoContent.classList.remove('hidden');
 
         titleText.textContent = data.title;
-        thumbnailImg.src = data.thumbnail;
-        currentVideoUrl = data.url;
+        // Use a placeholder if thumbnail is missing (common for non-YouTube sites)
+        thumbnailImg.src = data.thumbnail || 'icons/icon128.png';
+        
+        // Adjust thumbnail styling for vertical videos (like Reels/Shorts)
+        thumbnailImg.style.objectFit = 'cover';
+        thumbnailImg.style.maxHeight = '180px';
     }
 
-    function showError() {
+    function showError(msg) {
         loadingDiv.classList.add('hidden');
         videoContent.classList.add('hidden');
         errorContent.classList.remove('hidden');
+        if(msg) errorContent.querySelector('p').textContent = msg;
     }
 
+    // --- Download Logic ---
     const progressContainer = document.getElementById('progress-container');
     const progressBar = document.getElementById('progress-bar');
     const progressText = document.getElementById('progress-text');
@@ -121,13 +124,11 @@ document.addEventListener('DOMContentLoaded', () => {
     downloadBtn.addEventListener('click', () => {
         if (!currentVideoUrl) return;
 
-        updateStatus(`Starting...`, 'normal');
+        updateStatus(`Requesting download...`, 'normal');
         downloadBtn.disabled = true;
-        
-        // Reset Progress UI
         progressContainer.classList.remove('hidden');
         progressBar.style.width = '0%';
-        progressText.textContent = 'Initializing...';
+        progressText.textContent = 'Queueing...';
 
         chrome.runtime.sendMessage({
             action: "DOWNLOAD_VIDEO",
@@ -136,11 +137,10 @@ document.addEventListener('DOMContentLoaded', () => {
             quality: selectedQuality
         }, (response) => {
             if (chrome.runtime.lastError) {
-                updateStatus('Extension Error: ' + chrome.runtime.lastError.message, 'error');
+                updateStatus('Error: ' + chrome.runtime.lastError.message, 'error');
                 downloadBtn.disabled = false;
             } else if (response && response.success) {
-                const jobId = response.jobId;
-                trackProgress(jobId);
+                trackProgress(response.jobId);
             } else {
                 updateStatus('Error: ' + (response ? response.error : 'Unknown'), 'error');
                 downloadBtn.disabled = false;
@@ -150,8 +150,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function trackProgress(jobId) {
         const localApi = 'http://localhost:3000';
-        const interval = 1000;
-
         const tracker = setInterval(async () => {
             try {
                 const res = await fetch(`${localApi}/status?jobId=${jobId}`);
@@ -164,28 +162,27 @@ document.addEventListener('DOMContentLoaded', () => {
                         const { percent, totalSize, speed, eta } = data.progressData;
                         progressBar.style.width = percent;
                         progressText.textContent = `${percent} • ${totalSize} • ${speed}`;
-                        updateStatus(`Downloading... ETA: ${eta}`, 'normal');
-                    } else {
-                        progressText.textContent = 'Processing on server...';
+                        updateStatus(`Downloading...`, 'normal');
                     }
                 } else if (data.status === 'completed') {
                     clearInterval(tracker);
                     progressBar.style.width = '100%';
                     progressBar.style.backgroundColor = '#44ff44';
-                    progressText.textContent = 'Download Complete!';
+                    progressText.textContent = 'Completed!';
                     updateStatus('Saved to Downloads!', 'success');
                     downloadBtn.disabled = false;
+                    setTimeout(() => { 
+                        progressContainer.classList.add('hidden'); 
+                        progressBar.style.backgroundColor = '#cc0000';
+                    }, 3000);
                 } else if (data.status === 'error') {
                     clearInterval(tracker);
                     progressBar.style.backgroundColor = '#ff4444';
                     updateStatus('Error: ' + data.error, 'error');
                     downloadBtn.disabled = false;
                 }
-
-            } catch (e) {
-                console.error(e);
-            }
-        }, interval);
+            } catch (e) { console.error(e); }
+        }, 1000);
     }
 
     function updateStatus(msg, type) {

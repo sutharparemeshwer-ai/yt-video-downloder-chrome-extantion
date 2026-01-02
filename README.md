@@ -1,78 +1,95 @@
-# StreamSaver - YouTube Downloader Extension
+# StreamSaver - Universal Video Downloader 🚀
 
-**StreamSaver** is a powerful Chrome extension that allows you to download YouTube videos in high quality (up to 1080p+ with audio) directly to your computer.
+![Version](https://img.shields.io/badge/version-6.0-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![Platform](https://img.shields.io/badge/platform-Chrome_Extension-red) ![Backend](https://img.shields.io/badge/backend-Node.js%20%2B%20yt--dlp-green)
 
-Unlike standard browser extensions that are limited by YouTube's streaming protocols, StreamSaver uses a **Local Core Server** powered by `yt-dlp` to handle the heavy lifting. This ensures you get the **best possible quality** (video + audio merged) without the limitations of direct browser stream capture.
+A powerful, modern Chrome Extension to download videos from **YouTube (including Shorts)**, **Instagram**, **Facebook**, **Twitter**, and **1000+ other websites**. It uses a local server powered by `yt-dlp` to ensure the highest quality downloads (up to 4K/8K) and format conversion (MP3).
 
-## 🚀 Features
+---
 
-*   **High Quality Downloads:** Supports 1080p, 720p, 360p, and "Best Available" resolution.
-*   **Smart Merging:** Automatically merges video and audio streams (essential for 1080p+ content).
-*   **Audio Extraction:** Convert videos to MP3 audio.
-*   **Clean UI:** Simple, dark-themed popup interface.
-*   **No Third-Party Servers:** Everything runs locally on your machine for privacy and speed.
+## ✨ Features
 
-## 🛠 Prerequisites
+*   **🌍 Universal Support:** Works on YouTube, Instagram Reels, Facebook, Vimeo, Twitter, TikTok, and 1000+ more sites.
+*   **⚡ YouTube Shorts Optimized:** Automatically detects Shorts and optimizes file size (Max 1080p, <50MB) while keeping normal videos in 4K.
+*   **🎨 Modern Dark UI:** Sleek, professional popup design with Red accents and animated custom dropdowns.
+*   **🎵 Format Conversion:** Download as **Video (MP4)** or extract **Audio (MP3)** instantly.
+*   **🔓 Cookie Bypass:** Uses your browser cookies to download age-restricted or premium videos you have access to.
+*   **🚀 High Performance:** No browser throttling. Downloads happen outside the browser via the local server.
 
-Before you begin, ensure you have the following installed:
+---
 
-1.  **Node.js**: [Download here](https://nodejs.org/) (Required to run the local server).
-2.  **yt-dlp**: [Download here](https://github.com/yt-dlp/yt-dlp#installation).
-    *   **Crucial:** `yt-dlp` must be installed and added to your system's **PATH** so it can be run from a command line.
-    *   *Tip:* On Windows, you can download the `.exe` and place it in `C:\Windows\System32` or add its folder to your Environment Variables.
-3.  **FFmpeg** (Optional but Recommended): Required for merging 1080p video + audio and for MP3 conversion. [Download here](https://ffmpeg.org/download.html).
+## 🛠️ Architecture
 
-## 📥 Installation
+This project uses a **Hybrid Architecture** to bypass browser limitations:
 
-### 1. Setup the Local Server
-The server handles the actual downloading and processing.
+1.  **Frontend (Extension):** Detects the URL and sends it to the local server.
+2.  **Backend (Local Server):** Receives the request, spawns a `yt-dlp` process, and handles the heavy lifting.
+3.  **Core Engine (yt-dlp):** The industry-standard command-line tool that fetches the actual video stream.
 
-1.  Open your terminal/command prompt.
-2.  Navigate to the `server` folder:
+```mermaid
+[Browser Extension]  -->  (HTTP Request)  -->  [Local Node Server]  -->  (Spawn Process)  -->  [yt-dlp Core]
+```
+
+---
+
+## 🚀 How to Install & Run
+
+### Prerequisites
+*   **Node.js** installed on your machine.
+*   **yt-dlp** (Should be in your system PATH or installed via pip/brew).
+
+### Step 1: Start the Local Server
+The server acts as the bridge between the browser and the downloader core.
+
+1.  Navigate to the `server` folder.
+2.  Run the easy start script:
+    ```bash
+    # Windows
+    run-server.bat
+    ```
+    *Or manually:*
     ```bash
     cd server
-    ```
-3.  Install the required Node.js dependencies:
-    ```bash
     npm install
-    ```
-
-### 2. Install the Extension
-1.  Open Google Chrome and navigate to `chrome://extensions`.
-2.  Enable **Developer mode** in the top right corner.
-3.  Click **Load unpacked**.
-4.  Select the root folder of this project (the folder containing `manifest.json`).
-
-## 🖥 Usage
-
-1.  **Start the Server:**
-    Whenever you want to use the downloader, the local server must be running.
-    ```bash
-    # Inside the 'server' directory
     node server.js
     ```
-    You should see: `StreamSaver Local Server running at http://localhost:3000`
+3.  Keep this terminal window open (minimized).
 
-2.  **Download a Video:**
-    *   Go to any YouTube video.
-    *   Click the **StreamSaver icon** in your browser toolbar.
-    *   Select your desired **Format** (MP4 or MP3).
-    *   If MP4, select your **Quality** (Best, 720p, 360p).
-    *   Click **Download Direct**.
-    *   *Wait a moment* while the server processes the file. The download will automatically start in your browser once ready.
+### Step 2: Load the Extension
+1.  Open Chrome and go to `chrome://extensions`.
+2.  Enable **Developer Mode** (top right toggle).
+3.  Click **Load Unpacked**.
+4.  Select the main folder (`yt-downloader`) of this project.
 
-## 📁 Project Structure
+### Step 3: Usage
+1.  Go to any video (e.g., YouTube or Instagram).
+2.  Click the **StreamSaver** icon in your toolbar.
+3.  Wait for it to analyze the link.
+4.  Select **Format** (MP4/MP3) and **Quality**.
+5.  Click **Download Direct**.
 
-*   `manifest.json` - Chrome Extension configuration.
-*   `popup.html / .js / .css` - The extension's user interface.
-*   `background.js` - Handles communication between the popup and the local server.
-*   `content.js` - Reads video information from the YouTube page.
-*   `server/` - The Node.js backend.
-    *   `server.js` - API that runs `yt-dlp`.
-    *   `downloads/` - Temporary staging area for processed videos (automatically cleaned).
+---
 
-## ⚠️ Troubleshooting
+## 📸 Screenshots
+*(Add your screenshots here)*
 
-*   **"Server Error" or "Failed to fetch":** Ensure the Node.js server is running (`node server.js`).
-*   **"yt-dlp failed":** Make sure `yt-dlp` is installed and reachable from your terminal. Try running `yt-dlp --version` in your command prompt to verify.
-*   **Low Quality:** Ensure you have FFmpeg installed if you are trying to download 1080p or higher, as these formats often require merging separate video/audio streams.
+---
+
+## 🤝 Troubleshooting
+
+**Q: "Server Error" in the popup?**
+A: Make sure the black terminal window (Local Server) is running.
+
+**Q: Download stuck at 0%?**
+A: Check the server console log for errors. It might be a network issue or an unsupported link.
+
+---
+
+## 👨‍💻 Tech Stack
+*   **Frontend:** HTML5, CSS3, Vanilla JavaScript (Manifest V3)
+*   **Backend:** Node.js, Express.js
+*   **Core:** yt-dlp (Python-based)
+*   **Communication:** REST API (Fetch)
+
+---
+
+**Made for Educational Purposes.**
