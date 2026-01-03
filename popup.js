@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) {
                 showVideo(data);
             } else {
-                showError("No video found on this page.");
+                showError(data.error || "No video found on this page.");
             }
         } catch (error) {
             console.error(error);

@@ -7,11 +7,30 @@ const path = require('path');
 const app = express();
 const port = 3000;
 
+// Determine Root Directory (Handles 'pkg' snapshot vs local node)
+const isPkg = typeof process.pkg !== 'undefined';
+const ROOT_DIR = isPkg ? path.dirname(process.execPath) : __dirname;
+
+// Ensure downloads directory exists
+const downloadsDir = path.join(ROOT_DIR, 'downloads');
+if (!fs.existsSync(downloadsDir)) {
+    fs.mkdirSync(downloadsDir, { recursive: true });
+}
+
 app.use(cors());
 app.use(express.json());
 
 // Serve downloaded files statically
-app.use('/files', express.static(path.join(__dirname, 'downloads')));
+app.use('/files', express.static(path.join(ROOT_DIR, 'downloads')));
+
+// Status Check for Browser/User
+app.get('/', (req, res) => {
+    res.send('StreamSaver Server is Running! 🟢<br>You can close this tab and use the extension.');
+});
+
+app.get('/video-info', (req, res) => {
+    res.status(405).send('Method Not Allowed. This endpoint expects a POST request from the extension.');
+});
 
 // In-memory job store
 const jobs = {};
@@ -25,13 +44,16 @@ app.post('/video-info', (req, res) => {
     
     // Determine yt-dlp path (Check local bin first, then global)
     let ytDlpPath = 'yt-dlp';
-    const localBin = path.join(__dirname, 'bin', 'yt-dlp.exe');
-    const localRoot = path.join(__dirname, 'yt-dlp.exe');
+    const localBin = path.join(ROOT_DIR, 'bin', 'yt-dlp.exe');
+    const localRoot = path.join(ROOT_DIR, 'yt-dlp.exe');
+    const appDataBin = process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'StreamSaver', 'bin', 'yt-dlp.exe') : null;
     
     if (fs.existsSync(localBin)) {
         ytDlpPath = localBin;
     } else if (fs.existsSync(localRoot)) {
         ytDlpPath = localRoot;
+    } else if (appDataBin && fs.existsSync(appDataBin)) {
+        ytDlpPath = appDataBin;
     }
 
     // Run yt-dlp to get JSON metadata
@@ -41,6 +63,13 @@ app.post('/video-info', (req, res) => {
     const child = spawn(ytDlpPath, args);
     let output = '';
     let errorOutput = '';
+
+    child.on('error', (err) => {
+        console.error('Failed to start yt-dlp process:', err);
+        if (!res.headersSent) {
+            res.status(500).json({ success: false, error: 'Failed to start yt-dlp. Is it installed?' });
+        }
+    });
 
     child.stdout.on('data', (data) => output += data.toString());
     child.stderr.on('data', (data) => errorOutput += data.toString());
@@ -75,8 +104,8 @@ app.post('/start-download', (req, res) => {
     }
 
     const jobId = Date.now().toString();
-    const outputTemplate = path.join(__dirname, 'downloads', `${jobId}.%(ext)s`);
-    const cookieFilePath = path.join(__dirname, 'downloads', `cookies-${jobId}.txt`);
+    const outputTemplate = path.join(ROOT_DIR, 'downloads', `${jobId}.%(ext)s`);
+    const cookieFilePath = path.join(ROOT_DIR, 'downloads', `cookies-${jobId}.txt`);
 
     // Prepare Cookie File if cookies are provided
     let hasCookies = false;
@@ -167,17 +196,26 @@ app.post('/start-download', (req, res) => {
 
     // Determine yt-dlp path
     let ytDlpPath = 'yt-dlp';
-    const localBin = path.join(__dirname, 'bin', 'yt-dlp.exe');
-    const localRoot = path.join(__dirname, 'yt-dlp.exe');
+    const localBin = path.join(ROOT_DIR, 'bin', 'yt-dlp.exe');
+    const localRoot = path.join(ROOT_DIR, 'yt-dlp.exe');
+    const appDataBin = process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'StreamSaver', 'bin', 'yt-dlp.exe') : null;
     
     if (fs.existsSync(localBin)) {
         ytDlpPath = localBin;
     } else if (fs.existsSync(localRoot)) {
         ytDlpPath = localRoot;
+    } else if (appDataBin && fs.existsSync(appDataBin)) {
+        ytDlpPath = appDataBin;
     }
 
     // Spawn the process
     const child = spawn(ytDlpPath, args);
+
+    child.on('error', (err) => {
+        console.error(`[Job ${jobId}] Failed to start yt-dlp process:`, err);
+        jobs[jobId].status = 'error';
+        jobs[jobId].error = 'Failed to start downloader process';
+    });
 
     child.stdout.on('data', (data) => {
         const output = data.toString();
@@ -213,7 +251,7 @@ app.post('/start-download', (req, res) => {
 
         if (code === 0) {
             // Find the file that was created
-            const dir = path.join(__dirname, 'downloads');
+            const dir = path.join(ROOT_DIR, 'downloads');
             fs.readdir(dir, (err, files) => {
                 if (err) {
                     jobs[jobId].status = 'error';
@@ -255,7 +293,7 @@ app.get('/status', (req, res) => {
 setInterval(() => {
     const oneHour = 60 * 60 * 1000;
     const now = Date.now();
-    const dir = path.join(__dirname, 'downloads');
+    const dir = path.join(ROOT_DIR, 'downloads');
     
     // Clean memory
     for (const id in jobs) {
@@ -281,5 +319,5 @@ setInterval(() => {
 
 app.listen(port, () => {
     console.log(`StreamSaver Local Server running at http://localhost:${port}`);
-    console.log(`Files will be saved to: ${path.join(__dirname, 'downloads')}`);
+    console.log(`Files will be saved to: ${path.join(ROOT_DIR, 'downloads')}`);
 });
