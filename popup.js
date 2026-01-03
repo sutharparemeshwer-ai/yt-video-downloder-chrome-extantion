@@ -107,6 +107,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Adjust thumbnail styling for vertical videos (like Reels/Shorts)
         thumbnailImg.style.objectFit = 'cover';
         thumbnailImg.style.maxHeight = '180px';
+
+        // NEW: Playlist Logic
+        if (data.isPlaylist) {
+            downloadBtn.textContent = `Download Playlist (${data.videoCount} Videos) - ZIP`;
+            // Add a small badge or note?
+            titleText.textContent = `[Playlist] ${data.title}`;
+        } else {
+            downloadBtn.textContent = 'Download Direct';
+        }
     }
 
     function showError(msg) {
@@ -159,10 +168,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (data.status === 'processing') {
                     if (data.progressData) {
-                        const { percent, totalSize, speed, eta } = data.progressData;
-                        progressBar.style.width = percent;
-                        progressText.textContent = `${percent} • ${totalSize} • ${speed}`;
-                        updateStatus(`Downloading...`, 'normal');
+                        let { percent, totalSize, speed, eta } = data.progressData;
+                        
+                        // Handle Playlist "Video X/Y" format
+                        if (percent.toString().includes('Video')) {
+                            // Format: "Video 1/5"
+                            const parts = percent.split('/'); // ["Video 1", "5"]
+                            if (parts.length === 2) {
+                                const current = parseInt(parts[0].replace(/\D/g, ''));
+                                const total = parseInt(parts[1]);
+                                if (total > 0) {
+                                    const percentage = (current / total) * 100;
+                                    progressBar.style.width = `${percentage}%`;
+                                }
+                            }
+                            progressText.textContent = `${percent} • ${speed}`;
+                            updateStatus('Downloading Playlist...', 'normal');
+                        } else if (percent === 'Zipping...') {
+                             progressBar.style.width = '100%';
+                             progressBar.style.backgroundColor = '#FFD700'; // Gold color for zipping
+                             progressText.textContent = 'Compressing files...';
+                             updateStatus('Zipping Playlist...', 'normal');
+                        } else {
+                            // Standard Download
+                            progressBar.style.width = percent;
+                            progressText.textContent = `${percent} • ${totalSize} • ${speed}`;
+                            updateStatus(`Downloading...`, 'normal');
+                        }
                     }
                 } else if (data.status === 'completed') {
                     clearInterval(tracker);
@@ -170,6 +202,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     progressBar.style.backgroundColor = '#44ff44';
                     progressText.textContent = 'Completed!';
                     updateStatus('Saved to Downloads!', 'success');
+                    
+                    // Failsafe: Trigger download directly from Popup if it's open
+                    chrome.downloads.download({
+                        url: data.downloadUrl,
+                        filename: data.filename
+                    });
+
                     downloadBtn.disabled = false;
                     setTimeout(() => { 
                         progressContainer.classList.add('hidden'); 
